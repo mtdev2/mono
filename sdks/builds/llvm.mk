@@ -1,16 +1,16 @@
 
-##
-# Parameters
-#  $(1): version
-#  $(2): target
-#  $(3): src
+
+ Parameters
+  $(1): version
+  $(2): target
+  $(3): src
 define LLVMProvisionTemplate
 _$(1)-$(2)_HASH = $$(shell git -C $(3) rev-parse HEAD)
 _$(1)-$(2)_PACKAGE = $(1)-$(2)-$$(_$(1)-$(2)_HASH)-$$(UNAME).tar.gz
 _$(1)-$(2)_URL = "http://xamjenkinsartifact.blob.core.windows.net/mono-sdks/$$(_$(1)-$(2)_PACKAGE)"
 
 $$(TOP)/sdks/out/$(1)-$(2)/.stamp-download:
-	curl --location --silent --show-error $$(_$(1)-$(2)_URL) | tar -xvzf - -C $$(dir $$@)
+	curl -location -silent -show -error $$(_$(1)-$(2)_URL) | tar -xvzf - -C $$(dir $$@)
 	touch $$@
 
 .PHONY: download-$(1)-$(2)
@@ -32,9 +32,9 @@ ifeq ($(UNAME),Windows)
 $(eval $(call LLVMProvisionTemplate,llvm,llvmwin64-msvc,$(TOP)/external/llvm-project/llvm))
 endif
 
-##
-# Parameters
-#  $(1): target
+
+ Parameters
+  $(1): target
 define LLVMTemplate
 
 _llvm-$(1)_CMAKE_ARGS = \
@@ -59,9 +59,9 @@ clean-llvm-$(1)::
 
 endef
 
-##
-# Parameters:
-#  $(1): target
+
+ Parameters:
+  $(1): target
 define LLVMTemplateStub
 
 .PHONY: setup-llvm-$(1)
@@ -80,17 +80,17 @@ endef
 
 $(eval $(call LLVMTemplate,llvm64))
 
-##
-# Parameters
-#  $(1): target
-#  $(2): arch
-#  $(3): mxe
+
+ Parameters
+  $(1): target
+  $(2): arch
+  $(3): mxe
 define LLVMMxeTemplate
 
-# -DCROSS_TOOLCHAIN_FLAGS_NATIVE is needed to compile the native tools (tlbgen) using the host compilers
-# -DLLVM_ENABLE_THREADS=0 is needed because mxe doesn't define std::mutex etc.
-# -DLLVM_BUILD_EXECUTION_ENGINE=Off is needed because it depends on threads
-# -DCMAKE_EXE_LINKER_FLAGS=-static is needed so that we don't dynamically link with any of the mingw gcc support libs.
+ -DCROSS_TOOLCHAIN_FLAGS_NATIVE is needed to compile the native tools (tlbgen) using the host compilers
+ -DLLVM_ENABLE_THREADS=0 is needed because mxe doesn't define std::mutex etc.
+ -DLLVM_BUILD_EXECUTION_ENGINE=Off is needed because it depends on threads
+ -DCMAKE_EXE_LINKER_FLAGS=-static is needed so that we don't dynamically link with any of the mingw gcc support libs.
 _llvm-$(1)_CMAKE_ARGS = \
 	-DCMAKE_EXE_LINKER_FLAGS=\"-static\" \
 	-DCROSS_TOOLCHAIN_FLAGS_NATIVE=-DCMAKE_TOOLCHAIN_FILE=$$(TOP)/external/llvm-project/llvm/cmake/modules/NATIVE.cmake \
