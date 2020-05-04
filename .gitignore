@@ -148,3 +148,4 @@ mcs/build/compiler-server.log
 .packages
 artifacts
 .dotnet
+external/llvm-project
