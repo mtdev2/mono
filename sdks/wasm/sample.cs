@@ -4,7 +4,7 @@ using System.Net.Http;
 using System.Reflection;
 using WebAssembly;
 
-public partial class Math {
+public class SampleMath {
 	public static int IntAdd (int a, int b) {
 		var cp = new Simple.Complex (10, "hello");
 		int c = a + b;
@@ -23,7 +23,9 @@ public partial class Math {
 
 	public static void Run ()
 	{
+#if SAMPLE == false
 		DebuggerTests.EntryClass.run ();
+#endif
 	}
 
 }

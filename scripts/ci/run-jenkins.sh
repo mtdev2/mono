@@ -236,6 +236,39 @@ if [[ ${CI_TAGS} == *'sdks-ios'* ]];
         exit 0
 fi
 
+
+if [[ ${CI_TAGS} == *'sdks-maccat'* ]];
+then
+    # configuration on our bots
+    if [[ ${CI_TAGS} == *'xcode113'* ]]; then
+        export XCODE_DIR=/Applications/Xcode113.app/Contents/Developer
+        export MACOS_VERSION=10.15
+    else
+        export XCODE_DIR=/Applications/Xcode101.app/Contents/Developer
+        export MACOS_VERSION=10.14
+    fi
+
+    # retrieve selected Xcode version
+    /usr/libexec/PlistBuddy -c 'Print :ProductBuildVersion' ${XCODE_DIR}/../version.plist > xcode_version.txt
+
+    # make sure we embed the correct path into the PDBs
+    export MONOTOUCH_MCS_FLAGS=-pathmap:${MONO_REPO_ROOT}/=/Library/Frameworks/Xamarin.iOS.framework/Versions/Current/src/Xamarin.iOS/
+
+    echo "ENABLE_MACCAT=1" > sdks/Make.config
+    if [[ ${CI_TAGS} == *'cxx'* ]]; then
+        echo "ENABLE_CXX=1" >> sdks/Make.config
+    fi
+    if [[ ${CI_TAGS} == *'debug'* ]]; then
+        echo "CONFIGURATION=debug" >> sdks/Make.config
+    fi
+
+    ${TESTCMD} --label=configure --timeout=180m --fatal $gnumake -j ${CI_CPU_COUNT} --output-sync=recurse --trace -C sdks/builds configure-maccat NINJA=
+    ${TESTCMD} --label=build     --timeout=180m --fatal $gnumake -j ${CI_CPU_COUNT} --output-sync=recurse --trace -C sdks/builds build-maccat     NINJA=
+    ${TESTCMD} --label=archive   --timeout=180m --fatal $gnumake -j ${CI_CPU_COUNT} --output-sync=recurse --trace -C sdks/builds archive-maccat   NINJA=
+
+    exit 0
+fi
+
 if [[ ${CI_TAGS} == *'sdks-mac'* ]];
 then
     # configuration on our bots
@@ -322,7 +355,7 @@ if [[ ${CI_TAGS} == *'webassembly'* ]] || [[ ${CI_TAGS} == *'wasm'* ]];
 
         if [[ ${CI_TAGS} != *'osx-amd64'* ]]; then
             echo "ENABLE_WINDOWS=1" >> sdks/Make.config
-            echo "ENABLE_WASM_DYNAMIC_RUNTIME=1" >> sdks/Make.config
+            #echo "ENABLE_WASM_DYNAMIC_RUNTIME=1" >> sdks/Make.config
         fi
 
         if [[ ${CI_TAGS} == *'cxx'* ]]; then
@@ -351,14 +384,15 @@ if [[ ${CI_TAGS} == *'webassembly'* ]] || [[ ${CI_TAGS} == *'wasm'* ]];
         if [[ ${CI_TAGS} != *'no-tests'* ]]; then
             ${TESTCMD} --label=mini --timeout=20m $gnumake -C sdks/wasm run-all-mini
             ${TESTCMD} --label=v8-corlib --timeout=20m $gnu$gnumake -C sdks/wasm run-v8-corlib
+            # https://github.com/mono/mono/issues/19957
+            #${TESTCMD} --label=debugger --timeout=40m $gnumake -C sdks/wasm run-debugger-tests
             ${TESTCMD} --label=mini-system --timeout=60m $gnu$gnumake -C sdks/wasm run-all-System
             ${TESTCMD} --label=system-core --timeout=60m $gnumake -C sdks/wasm run-all-System.Core
             for suite in ${xunit_test_suites}; do ${TESTCMD} --label=xunit-${suite} --timeout=30m $gnumake -C sdks/wasm run-${suite}-xunit; done
             # disable for now until https://github.com/mono/mono/pull/13622 goes in
-            ${TESTCMD} --label=debugger --timeout=20m $gnumake -C sdks/wasm run-debugger-tests
             ${TESTCMD} --label=browser --timeout=20m $gnumake -C sdks/wasm run-browser-tests
             ${TESTCMD} --label=browser-threads --timeout=20m $gnumake -C sdks/wasm run-browser-threads-tests
-            ${TESTCMD} --label=browser-dynamic --timeout=20m $gnumake -C sdks/wasm run-browser-dynamic-tests
+            #${TESTCMD} --label=browser-dynamic --timeout=20m $gnumake -C sdks/wasm run-browser-dynamic-tests
             if [[ ${CI_TAGS} == *'osx-amd64'* ]]; then
                 ${TESTCMD} --label=browser-safari --timeout=20m $gnumake -C sdks/wasm run-browser-safari-tests            
             fi
